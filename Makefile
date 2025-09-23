@@ -1,11 +1,14 @@
-# Makefile for minimal xv6 kernel
+# Minimal bare-metal RISC-V kernel Makefile
 
-CC=riscv64-unknown-elf-gcc
-CFLAGS=-Wall -O2 -march=rv64gc -mabi=lp64 -ffreestanding -nostdlib -mcmodel=medany
+CC = riscv64-unknown-elf-gcc
+CFLAGS = -Wall -O2 -march=rv64gc -mabi=lp64 -ffreestanding -nostdlib -mcmodel=medany
 
-ENTRY=kernel/entry.S
-MAIN=kernel/main.c
-LD=kernel/kernel.ld
+ENTRY   = kernel/entry.S
+MAIN    = kernel/main.c
+UART    = kernel/uart.c
+LD      = kernel/kernel.ld
+
+OBJS = entry.o main.o uart.o
 
 all: kernel.elf
 
@@ -15,20 +18,14 @@ entry.o: $(ENTRY)
 main.o: $(MAIN)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-kernel/uart.o: kernel/uart.c
+uart.o: $(UART)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-kernel/console.o: kernel/console.c
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-kernel/printf.o: kernel/printf.c
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-kernel.elf: entry.o main.o kernel/uart.o kernel/console.o kernel/printf.o
-	$(CC) $(CFLAGS) -T $(LD) -o $@ entry.o main.o kernel/uart.o kernel/console.o kernel/printf.o
+kernel.elf: $(OBJS)
+	$(CC) $(CFLAGS) -T $(LD) -o $@ $(OBJS)
 
 run: kernel.elf
-	qemu-system-riscv64 -machine virt -nographic -kernel kernel.elf
+	qemu-system-riscv64 -machine virt -nographic -bios none -kernel kernel.elf
 
 clean:
-	rm -f *.o kernel.elf kernel/*.o
+	rm -f *.o kernel.elf

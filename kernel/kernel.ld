@@ -1,17 +1,28 @@
-OUTPUT_ARCH("riscv")
-ENTRY(_entry)
+/* Linker script for minimal bare-metal RISC-V kernel */
+ENTRY(_start)
 
-SECTIONS {
-  /* 内核起始地址 */
-  . = 0x80200000;
+/* 定义栈顶地址（你可以按需调整） */
+PROVIDE(_stack_top = 0x80020000);
 
-  .text : { *(.text) }
-  .rodata : { *(.rodata) }
-  .data : { *(.data) }
+SECTIONS
+{
+  /* 程序从 0x80000000 开始执行（QEMU virt 默认机器映射） */
+  . = 0x80000000;
 
-  .bss : {
+  .text : {
+    *(.text*)
+    *(.rodata*)
+  }
+
+  .data : {
+    *(.data*)
+  }
+
+  /* BSS 段：记录开始/结束符号，NOLOAD 表示不在 ELF 文件中占位 */
+  .bss (NOLOAD) : {
     __bss_start = .;
-    *(.bss)
+    *(.bss*)
+    *(COMMON)
     __bss_end = .;
   }
 }
