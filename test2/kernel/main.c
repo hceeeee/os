@@ -1,17 +1,6 @@
-/* Minimal main: call uart_puts and then loop */
-/*extern void uart_puts(const char *s);
-
-void main(void) {
-    uart_puts("Hello, OS\n");
-
-/*
-    for (;;) {
-        asm volatile ("wfi");
-    }
-}*/
-
-/*#include <stddef.h>
+#include <stddef.h>
 #include <stdint.h>
+#include "console.h"
 
 int printf(const char *fmt, ...);
 
@@ -32,29 +21,37 @@ void test_printf_edge_cases() {
     printf("Empty string: %s\n", "");
 }
 
+void test_clear_screen()
+{
+   //测试清除行以及清屏的效果
+    clear_screen();
+    goto_xy(5, 1);
+    console_puts("AAAAA AAAAA AAAAA AAAAA AAAAA");
+    goto_xy(5, 1);
+    clear_line();
+    console_puts("<CLEARED at line start>");
+
+    goto_xy(7, 1);
+    console_puts("LEFT--RIGHT");
+    goto_xy(7, 7); // 光标放在两个连字符后面（R 前）
+    clear_line();  // 从光标到行尾清掉 "RIGHT"
+    console_puts("<TAIL>");
+    
+
+}
+void test_print_color()
+{
+    clear_screen();
+    // 使用 goto_xy 与 printf_color 验证负数 %d 的着色输出与定位
+    goto_xy(5, 7);
+    printf_color(RED,   "printf_color %%-d (neg): %d\n", -123);
+    goto_xy(7, 7);
+    printf("plain printf %%-d (neg): %d\n", -123);
+}
 void main() {
     test_printf_basic();
     test_printf_edge_cases();
-
+    test_clear_screen();
+    test_print_color();
     while (1); 
-}
-*/
-
-//清屏幕
-#include "console.h"
-
-void main() {
-    //console_puts("Hello, OS!\n");
-    clear_screen();               // 清屏
-    goto_xy(5, 10);               // 光标跳到第5行第10列
-    console_puts("Hello, OS!\n");
-
-    printf_color(RED, "Red text\n");
-    printf_color(GREEN, "Green text\n");
-
-    goto_xy(8, 5);
-    clear_line();                  // 清空当前行
-    console_puts("Line cleared and overwritten\n");
-
-    while(1); // 防止程序退出
 }

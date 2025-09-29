@@ -49,6 +49,13 @@ int printf(const char *fmt, ...) {
                 while (*s) console_putc(*s++);
                 break;
             }
+
+            case 'p': {
+            void *ptr = va_arg(ap, void*);
+            console_puts("0x");
+            print_number((unsigned long)ptr, 16, 0);
+            break;
+            } 
             case 'c': console_putc((char)va_arg(ap,int)); break;
             case '%': console_putc('%'); break;
             default: console_putc('%'); console_putc(*p); break;
