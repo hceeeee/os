@@ -3,9 +3,7 @@ extern void uart_puts(const char *s);
 
 void main(void) {
     uart_puts("Hello, OS\n");
-
-    /* 进入死循环，不返回 */
-    for (;;) {
-        asm volatile ("wfi");
+    for (;;) {//死循环
+        asm volatile ("wfi");//进入低能耗模式 wait for interrupt
     }
 }

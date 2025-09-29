@@ -16,7 +16,7 @@ _start:
     /* 调用 C 的 main */
     call    main
 
-    /* 如果 main 返回，进入死循环（wfi + jump） */
+    /* 如果 main 返回，进入死循环（wait for interrupt + jump） */
 3:
     wfi
     j       3b
