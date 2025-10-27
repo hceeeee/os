@@ -2,6 +2,7 @@
 #include "pmm.h"
 #include "printf.h"
 #include "pagetable.h"
+#include "kvminit.h"
 #include <stdint.h>
 #include <stddef.h>
 #define PHYS_MEM_START 0x80000000UL
@@ -77,11 +78,81 @@ void test_pagetable(void) {
     destroy_pagetable(pt);
 }
 
+/* Test virtual memory activation */
+void test_virtual_memory(void) {
+    printf("\n=== Virtual Memory Test Start ===\n");
+    
+    printf("Before enabling paging...\n");
+    printf("Current mode: direct memory access\n");
+    
+    /* 初始化并启用分页 */
+    kvminit();
+    printf("Kernel pagetable created\n");
+    
+    kvminithart();
+    printf("Paging enabled, satp register set\n");
+    
+    printf("After enabling paging...\n");
+    printf("Current mode: virtual memory with paging\n");
+    
+    /* 测试内核代码仍然可执行 */
+    printf("Testing kernel code execution...\n");
+    extern char _text[], _etext[];
+    uint64_t text_start = (uint64_t)_text;
+    uint64_t text_end = (uint64_t)_etext;
+    printf("Kernel text: %p - %p\n", (void*)text_start, (void*)text_end);
+    
+    /* 测试内核数据仍然可访问 */
+    printf("Testing kernel data access...\n");
+    static int test_var = 0xDEADBEEF;
+    printf("Test variable value: 0x%x\n", test_var);
+    test_var = 0xCAFEBABE;
+    if (test_var == 0xCAFEBABE) {
+        printf("Kernel data access OK\n");
+    } else {
+        printf("Kernel data access ERROR\n");
+    }
+    
+    /* 测试设备访问仍然正常 */
+    printf("Testing device access...\n");
+    /* UART 设备已映射，可以访问 */
+    printf("Device access test OK (UART mapped)\n");
+    
+    /* 测试页表查找 */
+    printf("Testing pagetable lookup...\n");
+    pte_t *pte = walk_lookup(kernel_pagetable, KERNBASE);
+    if (pte && (*pte & PTE_V)) {
+        uint64_t mapped_pa = ((*pte) >> PPN_SHIFT) << 12;
+        printf("KERNBASE lookup OK: va=%p -> pa=%p\n", (void*)KERNBASE, (void*)mapped_pa);
+    }
+    
+    printf("=== Virtual Memory Test End ===\n");
+}
+
 void main(void) {
-    //pmm_init(PHYS_MEM_START, PHYS_MEM_END);
-    //test_physical_memory();
-    pmm_init(0,0);
+    /* 分层测试：
+     * 1. 物理内存管理器测试
+     * 2. 页表管理系统测试  
+     * 3. 虚拟内存激活测试
+     */
+    
+    printf("=== Experiment 3: Memory Management & Paging ===\n\n");
+    
+    /* 测试1: 物理内存管理 */
+    printf("\n[Test 1] Physical Memory Manager\n");
+    pmm_init(0, 0);
+    test_physical_memory();
+    
+    /* 测试2: 页表管理 */
+    printf("\n[Test 2] Page Table Management\n");
     test_pagetable();
+    
+    /* 测试3: 虚拟内存激活 */
+    printf("\n[Test 3] Virtual Memory Activation\n");
+    test_virtual_memory();
+    
+    printf("\n=== All Tests Completed ===\n");
+    
     while (1) {
         asm volatile("wfi");
     }

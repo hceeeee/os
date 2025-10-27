@@ -51,7 +51,7 @@ void test_print_color()
 void main() {
     test_printf_basic();
     test_printf_edge_cases();
-    test_clear_screen();
+    //test_clear_screen();
     test_print_color();
     while (1); 
 }

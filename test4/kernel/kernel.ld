@@ -9,23 +9,14 @@ SECTIONS
   /* 程序从 0x80000000 开始执行（QEMU virt 默认机器映射） */
   . = 0x80000000;
 
-  _text = .;
   .text : {
     *(.text*)
-  }
-  _etext = .;
-
-  _rodata = .;
-  .rodata : {
     *(.rodata*)
   }
-  _erodata = .;
 
-  _data = .;
   .data : {
     *(.data*)
   }
-  _edata = .;
 
   /* BSS 段：记录开始/结束符号，NOLOAD 表示不在 ELF 文件中占位 */
   .bss (NOLOAD) : {
@@ -34,7 +25,4 @@ SECTIONS
     *(COMMON)
     __bss_end = .;
   }
-  
-  _end = .;  /* 记录内核结束地址 */
-
 }

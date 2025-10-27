@@ -30,6 +30,14 @@ typedef uint64_t* pagetable_t;
 #define VPN_SHIFT(level) (12 + 9 * (level))
 #define VPN_MASK(va, level) (((va) >> VPN_SHIFT(level)) & 0x1FFUL)
 
+/* Helper macros for address manipulation */
+#define PAGE_ROUND_DOWN(addr) ((addr) & ~(PAGE_SIZE - 1))
+#define PAGE_ROUND_UP(addr) (((addr) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
+
+/* SATP register encoding for Sv39 */
+#define SATP_MODE_SV39 (8UL << 60)
+#define MAKE_SATP(pt) (SATP_MODE_SV39 | (((uint64_t)(pt)) >> 12))
+
 /* Interface */
 pagetable_t create_pagetable(void);
 void destroy_pagetable(pagetable_t pt);
