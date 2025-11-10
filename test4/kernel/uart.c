@@ -10,6 +10,14 @@ static volatile uint8_t *const uart = (volatile uint8_t *)UART0_BASE;
 #define UART_THR 0
 #define UART_LSR 5   /* Line Status Register */
 
+/* Optional basic init for ns16550-compatible UART */
+void uart_init(void) {
+    /* For this minimal setup on QEMU virt, the UART is already configured
+       by the machine/firmware. We can keep this empty or ensure TX ready
+       by reading LSR once to avoid any pending status issues. */
+    (void)uart[UART_LSR];
+}
+
 void uart_putc(char c) {
     /* Wait for Transmitter Holding Register empty: LSR bit 5 (0x20) */
     while (!(uart[UART_LSR] & 0x20)) {
@@ -28,3 +36,7 @@ void uart_puts(const char *s) {
         uart_putc(*s++);
     }
 }
+
+/* Console aliases used by printf.c */
+void console_putc(char c) { uart_putc(c); }
+void console_puts(const char *s) { uart_puts(s); }

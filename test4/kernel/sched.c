@@ -2,11 +2,12 @@
 #include <stdbool.h>
 
 static int slice = 0;
-bool should_yield(void){
-  // 简易：每 10 个 tick 让出一次 CPU
+
+bool should_yield(void) {
+  // Hand back the CPU every 10 timer ticks.
   return (++slice % 10) == 0;
 }
 
-void yield(void){
-  // TODO：保存当前进程上下文，选择下一个进程，切换……
+void yield(void) {
+  // Scheduler placeholder. Hook real context switching logic here.
 }
