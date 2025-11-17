@@ -5,7 +5,8 @@
 #include <string.h>
 
 extern void swtch(struct context *old, struct context *new);
-
+// 在 proc.c 顶部添加
+extern uint64_t kernel_ticks;
 struct proc proc_table[NPROC];
 static uint8_t kstacks[NPROC][KSTACK_SIZE];
 static struct cpu cpus = {0};
@@ -21,6 +22,9 @@ struct proc *myproc(void) { return mycpu()->proc; }
 
 static int allocpid(void) { return nextpid++; }
 
+// 关键修改：提前声明 alloc_process 函数
+static struct proc *alloc_process(void);
+
 void proc_init(void) {
   for (int i = 0; i < NPROC; ++i) {
     init_lock(&proc_table[i].lock);
@@ -31,7 +35,7 @@ void proc_init(void) {
 }
 
 struct proc *init_bootproc(void) {
-  struct proc *p = alloc_process();
+  struct proc *p = alloc_process();  // 现在此处能正确识别函数声明
   if (!p) {
     return NULL;
   }
@@ -45,6 +49,7 @@ struct proc *init_bootproc(void) {
   return p;
 }
 
+// alloc_process 函数定义（保持不变）
 static struct proc *alloc_process(void) {
   for (int i = 0; i < NPROC; ++i) {
     struct proc *p = &proc_table[i];
@@ -67,6 +72,7 @@ static struct proc *alloc_process(void) {
   return NULL;
 }
 
+// 以下代码保持不变
 static void process_trampoline(void) {
   struct proc *p = myproc();
   if (p && p->entry) {
@@ -125,14 +131,14 @@ static void sched(void) {
   swtch(&p->context, &c->context);
 }
 
-void yield(void) {
+/*void yield(void) {
   struct proc *p = myproc();
   if (!p) return;
   acquire(&p->lock);
   p->state = RUNNABLE;
   sched();
   release(&p->lock);
-}
+}*/
 
 void exit_process(int status) {
   struct proc *p = myproc();

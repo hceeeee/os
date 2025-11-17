@@ -3,7 +3,7 @@
 #include "trap.h"
 #include <stdint.h>
 #include <stdio.h>
-
+uint64_t kernel_ticks = 0;  // 全局变量，记录时钟 ticks
 // Simple delay based on timer ticks.
 static void sleep_ticks(uint64_t ticks) {
   const uint64_t target = ticks_since_boot() + ticks;
