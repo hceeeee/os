@@ -1,7 +1,7 @@
 CC = riscv64-unknown-elf-gcc
 CFLAGS = -Wall -Wextra -O2 -march=rv64gc -mabi=lp64 -ffreestanding -nostdlib -mcmodel=medany -fno-common -Ikernel
 
-OBJS = entry.o trapvec.o mtrapvec.o timervec.o start.o main.o uart.o printf.o trap.o sched.o
+OBJS = entry.o trapvec.o mtrapvec.o timervec.o start.o main.o uart.o printf.o trap.o sched.o proc.o swtch.o
 
 all: kernel.elf
 
@@ -33,6 +33,12 @@ trap.o: kernel/trap.c kernel/trap.h kernel/riscv.h kernel/sbi.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 sched.o: kernel/sched.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+proc.o: kernel/proc.c kernel/proc.h kernel/riscv.h kernel/trap.h
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+swtch.o: kernel/swtch.S
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 kernel.elf: $(OBJS)
