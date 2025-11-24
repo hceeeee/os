@@ -6,7 +6,7 @@
 
 extern void swtch(struct context *old, struct context *new);
 // ÔÚ proc.c ¶¥²¿Ìí¼Ó
-extern uint64_t kernel_ticks;
+extern volatile uint64_t kernel_ticks;
 struct proc proc_table[NPROC];
 static uint8_t kstacks[NPROC][KSTACK_SIZE];
 static struct cpu cpus = {0};
@@ -127,18 +127,22 @@ void scheduler(void) {
 static void sched(void) {
   struct proc *p = myproc();
   struct cpu *c = mycpu();
-  if (!p) return;
+  if (!p) {
+    return;
+  }
   swtch(&p->context, &c->context);
 }
 
-/*void yield(void) {
+void yield(void) {
   struct proc *p = myproc();
-  if (!p) return;
+  if (!p) {
+    return;
+  }
   acquire(&p->lock);
   p->state = RUNNABLE;
   sched();
   release(&p->lock);
-}*/
+}
 
 void exit_process(int status) {
   struct proc *p = myproc();
@@ -183,19 +187,29 @@ int wait_process(int *status) {
     if (!havekids) {
       return -1;
     }
-    sleep_on(p);
+    sleep_on(p, NULL);
   }
 }
 
-void sleep_on(void *chan) {
+void sleep_on(void *chan, struct spinlock *lk) {
   struct proc *p = myproc();
   if (!p) return;
-  acquire(&p->lock);
+  if (lk && lk != &p->lock) {
+    acquire(&p->lock);
+    release(lk);
+  } else if (lk == NULL) {
+    acquire(&p->lock);
+  }
   p->chan = chan;
   p->state = SLEEPING;
   sched();
   p->chan = NULL;
-  release(&p->lock);
+  if (lk && lk != &p->lock) {
+    release(&p->lock);
+    acquire(lk);
+  } else {
+    release(&p->lock);
+  }
 }
 
 void wakeup(void *chan) {
@@ -210,5 +224,15 @@ void wakeup(void *chan) {
 }
 
 // Expose tick count so that tests can measure scheduler progress.
-extern uint64_t kernel_ticks;
+extern volatile uint64_t kernel_ticks;
 uint64_t ticks_since_boot(void) { return kernel_ticks; }
+
+void debug_proc_table(void) {
+  printf("=== Process Table ===\n");
+  for (int i = 0; i < NPROC; ++i) {
+    struct proc *p = &proc_table[i];
+    if (p->state != UNUSED) {
+      printf("PID:%d State:%d Name:%s\n", p->pid, p->state, p->name);
+    }
+  }
+}

@@ -3,7 +3,7 @@
 #include "trap.h"
 #include <stdint.h>
 #include <stdio.h>
-uint64_t kernel_ticks = 0;  // 全局变量，记录时钟 ticks
+volatile uint64_t kernel_ticks = 0;  // 全局变量，记录时钟 ticks
 // Simple delay based on timer ticks.
 static void sleep_ticks(uint64_t ticks) {
   const uint64_t target = ticks_since_boot() + ticks;
@@ -42,13 +42,16 @@ static int buffer[BUF_SIZE];
 static int head = 0, tail = 0, count = 0;
 static struct spinlock buf_lock;
 
-static void shared_buffer_init(void) { buf_lock.locked = 0; head = tail = count = 0; }
+static void shared_buffer_init(void) {
+  init_lock(&buf_lock);
+  head = tail = count = 0;
+}
 
 static void buf_put(int v) {
-  while (count == BUF_SIZE) {
-    sleep_on(&buffer);
-  }
   acquire(&buf_lock);
+  while (count == BUF_SIZE) {
+    sleep_on(&buffer, &buf_lock);
+  }
   buffer[tail] = v;
   tail = (tail + 1) % BUF_SIZE;
   count++;
@@ -57,10 +60,10 @@ static void buf_put(int v) {
 }
 
 static int buf_get(void) {
-  while (count == 0) {
-    sleep_on(&buffer);
-  }
   acquire(&buf_lock);
+  while (count == 0) {
+    sleep_on(&buffer, &buf_lock);
+  }
   int v = buffer[head];
   head = (head + 1) % BUF_SIZE;
   count--;
@@ -89,12 +92,11 @@ static void test_process_creation(void) {
   printf("Testing process creation...\n");
   int pid = create_process(simple_task);
   printf("created pid %d\n", pid);
-  int pids[NPROC];
   int count_created = 0;
   for (int i = 0; i < NPROC + 5; ++i) {
     int npid = create_process(simple_task);
     if (npid > 0) {
-      pids[count_created++] = npid;
+      count_created++;
     } else {
       break;
     }
@@ -129,17 +131,6 @@ static void test_synchronization(void) {
   printf("Synchronization test completed\n");
 }
 
-static void debug_proc_table(void) {
-  printf("=== Process Table ===\n");
-  for (int i = 0; i < NPROC; ++i) {
-    extern struct proc proc_table[];
-    struct proc *p = &proc_table[i];
-    if (p->state != UNUSED) {
-      printf("PID:%d State:%d Name:%s\n", p->pid, p->state, p->name);
-    }
-  }
-}
-
 void kmain(void) {
   printf("Kernel start.\n");
   proc_init();
@@ -149,6 +140,7 @@ void kmain(void) {
   test_process_creation();
   test_scheduler();
   test_synchronization();
+  debug_proc_table();
 
   printf("All tests done. Entering scheduler loop.\n");
   // keep running scheduler

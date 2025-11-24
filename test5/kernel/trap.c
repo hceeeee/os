@@ -9,6 +9,7 @@
 
 static interrupt_handler_t ivt[MAX_IRQ];
 static volatile uint64_t ticks = 0;
+extern volatile uint64_t kernel_ticks;
 volatile int interrupt_count = 0;
 static volatile int *counter_ptr = &interrupt_count;
 
@@ -135,6 +136,7 @@ static void set_next_timer(void) {
 
 void timer_interrupt(void) {
   ++ticks;
+  ++kernel_ticks;
   if (counter_ptr) {
     ++(*counter_ptr);
   }
